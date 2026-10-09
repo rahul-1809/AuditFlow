@@ -14,7 +14,7 @@
     {
       "binding": "DB",
       "database_name": "auditflow-db",
-      "database_id": "feb933b6-5e85-4aea-8165-43009f54e52e",
+      "database_id": "88958502-e7ea-44ef-886f-fbaef0c17779",
       "migrations_dir": "migrations"
     }
   ],
