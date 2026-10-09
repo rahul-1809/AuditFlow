@@ -49,6 +49,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({
   const [selectedClient, setSelectedClient] = useState<string>('all');
   const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedYear, setSelectedYear] = useState<string>('all');
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
 
   // Expand / collapse state for company/client groups
@@ -147,16 +148,40 @@ export const TasksPage: React.FC<TasksPageProps> = ({
     return types.length > 0 ? types : ['GST'];
   }, [clients, taskForm.clientId]);
 
-  // Unique available task months for the filter dropdown
-  const availableMonths = useMemo(() => {
+  // Unique available years for the filter dropdown
+  const availableYears = useMemo(() => {
     const set = new Set<string>();
+    const currentYr = new Date().getFullYear();
+    set.add(String(currentYr));
+    set.add(String(currentYr - 1));
+    set.add(String(currentYr + 1));
     tasks.forEach((t) => {
-      if (t.month) set.add(t.month);
+      if (t.month && t.month.length >= 4) {
+        set.add(t.month.slice(0, 4));
+      } else if (t.due_date && t.due_date.length >= 4) {
+        set.add(t.due_date.slice(0, 4));
+      }
     });
-    const nowMonth = new Date().toISOString().slice(0, 7);
-    set.add(nowMonth);
     return Array.from(set).sort((a, b) => b.localeCompare(a));
   }, [tasks]);
+
+  const MONTH_OPTIONS = useMemo(
+    () => [
+      { value: '01', label: 'January (01)' },
+      { value: '02', label: 'February (02)' },
+      { value: '03', label: 'March (03)' },
+      { value: '04', label: 'April (04)' },
+      { value: '05', label: 'May (05)' },
+      { value: '06', label: 'June (06)' },
+      { value: '07', label: 'July (07)' },
+      { value: '08', label: 'August (08)' },
+      { value: '09', label: 'September (09)' },
+      { value: '10', label: 'October (10)' },
+      { value: '11', label: 'November (11)' },
+      { value: '12', label: 'December (12)' },
+    ],
+    []
+  );
 
   // Group tasks by Client / Company & special Others grouping
   const taskGroups = useMemo(() => {
@@ -190,9 +215,15 @@ export const TasksPage: React.FC<TasksPageProps> = ({
 
       const matchesAssignee = selectedAssignee === 'all' || task.assigned_to === selectedAssignee;
       const matchesStatus = selectedStatus === 'all' || task.status === selectedStatus;
-      const matchesMonth = selectedMonth === 'all' || task.month === selectedMonth;
 
-      return matchesSearch && matchesAssignee && matchesStatus && matchesMonth;
+      // Year & Month matching
+      const taskYear = task.month ? task.month.slice(0, 4) : task.due_date ? task.due_date.slice(0, 4) : '';
+      const taskMonthNum = task.month && task.month.length >= 7 ? task.month.slice(5, 7) : task.due_date && task.due_date.length >= 7 ? task.due_date.slice(5, 7) : '';
+
+      const matchesYear = selectedYear === 'all' || taskYear === selectedYear;
+      const matchesMonth = selectedMonth === 'all' || taskMonthNum === selectedMonth;
+
+      return matchesSearch && matchesAssignee && matchesStatus && matchesYear && matchesMonth;
     });
 
     const groups: ClientTaskGroup[] = [];
@@ -245,7 +276,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({
     }
 
     return groups;
-  }, [tasks, clients, users, searchQuery, selectedClient, selectedAssignee, selectedStatus, selectedMonth, activeClientTypeFilter, candidateClients]);
+  }, [tasks, clients, users, searchQuery, selectedClient, selectedAssignee, selectedStatus, selectedYear, selectedMonth, activeClientTypeFilter, candidateClients]);
 
   // Total visible task count across groups
   const totalVisibleTasks = useMemo(() => {
@@ -579,6 +610,25 @@ export const TasksPage: React.FC<TasksPageProps> = ({
           </div>
 
           <div className="filter-select-group">
+            <label className="filter-label" htmlFor="filter-year">
+              Year
+            </label>
+            <select
+              id="filter-year"
+              className="filter-select"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+            >
+              <option value="all">All Years</option>
+              {availableYears.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-select-group">
             <label className="filter-label" htmlFor="filter-month">
               Month
             </label>
@@ -589,9 +639,9 @@ export const TasksPage: React.FC<TasksPageProps> = ({
               onChange={(e) => setSelectedMonth(e.target.value)}
             >
               <option value="all">All Months</option>
-              {availableMonths.map((m) => (
-                <option key={m} value={m}>
-                  {m}
+              {MONTH_OPTIONS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
                 </option>
               ))}
             </select>
@@ -600,6 +650,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({
           {(selectedClient !== 'all' ||
             selectedAssignee !== 'all' ||
             selectedStatus !== 'all' ||
+            selectedYear !== 'all' ||
             selectedMonth !== 'all' ||
             searchQuery ||
             Boolean(activeClientTypeFilter)) && (
@@ -611,6 +662,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({
                 setSelectedClient('all');
                 setSelectedAssignee('all');
                 setSelectedStatus('all');
+                setSelectedYear('all');
                 setSelectedMonth('all');
                 if (onClearClientTypeFilter) onClearClientTypeFilter();
               }}
