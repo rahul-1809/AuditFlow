@@ -54,6 +54,12 @@ export const api = {
     });
   },
 
+  async deleteUser(id: string): Promise<{ success: boolean; message: string }> {
+    return request<{ success: boolean; message: string }>(`/users/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
   // Clients
   async getClients(): Promise<Client[]> {
     return request<Client[]>('/clients');

@@ -270,6 +270,21 @@ export async function handleApiRequest(
       return jsonResponse({ success: true, message: 'Password updated successfully.' });
     }
 
+    // DELETE /api/users/:id
+    if (userMatch && method === 'DELETE') {
+      const id = userMatch[1];
+      const user: any = await env.DB.prepare('SELECT role FROM users WHERE id = ?').bind(id).first();
+      if (!user) {
+        return jsonResponse({ error: 'User not found.' }, 404);
+      }
+      if (user.role === 'admin') {
+        return jsonResponse({ error: 'Primary Admin account cannot be deleted.' }, 400);
+      }
+
+      await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id).run();
+      return jsonResponse({ success: true, message: 'User deleted successfully.' });
+    }
+
     // -----------------------------------------------------------
     // Clients Management
     // -----------------------------------------------------------

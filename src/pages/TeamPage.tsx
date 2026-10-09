@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import type { UserProfile } from '../types';
 import { Modal } from '../components/Modal';
-import { UserPlus, KeyRound, Edit2, CheckCircle2, UserCheck, UserX } from 'lucide-react';
+import { UserPlus, KeyRound, Edit2, CheckCircle2, UserCheck, UserX, Trash2 } from 'lucide-react';
 
 export const TeamPage: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -111,26 +111,20 @@ export const TeamPage: React.FC = () => {
     }
   };
 
-  // Toggle Active/Inactive
-  const handleToggleStatus = async (user: UserProfile) => {
+  // Delete Assistant Account
+  const handleDeleteUser = async (user: UserProfile) => {
     if (user.role === 'admin') {
-      alert('Primary Admin account cannot be deactivated.');
+      alert('Primary Admin account cannot be deleted.');
       return;
     }
 
-    const nextStatus = user.status === 'active' ? 'inactive' : 'active';
-    const confirmMsg =
-      nextStatus === 'inactive'
-        ? `Deactivate ${user.name}? They will not be able to log in.`
-        : `Reactivate account for ${user.name}?`;
-
-    if (window.confirm(confirmMsg)) {
+    if (window.confirm(`Delete assistant account for ${user.name} (${user.email})?`)) {
       try {
-        await api.updateUser(user.id, { status: nextStatus });
+        await api.deleteUser(user.id);
         await loadUsers();
-        showNotification(`Account status set to ${nextStatus} for ${user.name}.`);
+        showNotification(`Account deleted for ${user.name}.`);
       } catch (err: any) {
-        alert(`Error updating status: ${err.message}`);
+        alert(`Error deleting account: ${err.message}`);
       }
     }
   };
@@ -141,7 +135,7 @@ export const TeamPage: React.FC = () => {
         <div>
           <h2 className="page-title">Team Management</h2>
           <p className="page-subtitle">
-            Manage assistant credentials, account statuses, and system access
+            Manage assistant credentials and system access
           </p>
         </div>
 
@@ -181,7 +175,7 @@ export const TeamPage: React.FC = () => {
               {loading ? (
                 <tr>
                   <td colSpan={5} className="empty-table-state">
-                    Loading team accounts from SQLite database...
+                    Loading team accounts...
                   </td>
                 </tr>
               ) : (
@@ -246,13 +240,11 @@ export const TeamPage: React.FC = () => {
                           {!isPrimaryAdmin && (
                             <button
                               type="button"
-                              className={`btn-toggle-status ${
-                                user.status === 'active' ? 'btn-deactivate' : 'btn-activate'
-                              }`}
-                              onClick={() => handleToggleStatus(user)}
-                              title={user.status === 'active' ? 'Deactivate account' : 'Activate account'}
+                              className="icon-action-btn icon-danger"
+                              onClick={() => handleDeleteUser(user)}
+                              title="Delete Account"
                             >
-                              {user.status === 'active' ? 'Deactivate' : 'Activate'}
+                              <Trash2 size={13} />
                             </button>
                           )}
                         </div>

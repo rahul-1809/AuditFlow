@@ -117,6 +117,20 @@ app.post('/api/users/:id/reset-password', (req, res) => {
   res.json({ success: true, message: 'Password updated successfully.' });
 });
 
+app.delete('/api/users/:id', (req, res) => {
+  const { id } = req.params;
+  const user = db.prepare('SELECT role FROM users WHERE id = ?').get(id);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found.' });
+  }
+  if (user.role === 'admin') {
+    return res.status(400).json({ error: 'Primary Admin account cannot be deleted.' });
+  }
+
+  db.prepare('DELETE FROM users WHERE id = ?').run(id);
+  res.json({ success: true, message: 'User deleted successfully.' });
+});
+
 // -------------------------------------------------------------
 // Clients Management
 // -------------------------------------------------------------
