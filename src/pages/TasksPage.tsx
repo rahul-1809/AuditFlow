@@ -49,7 +49,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({
   const [selectedClient, setSelectedClient] = useState<string>('all');
   const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [selectedYear, setSelectedYear] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
 
   // Expand / collapse state for company/client groups
@@ -167,18 +167,18 @@ export const TasksPage: React.FC<TasksPageProps> = ({
 
   const MONTH_OPTIONS = useMemo(
     () => [
-      { value: '01', label: 'January (01)' },
-      { value: '02', label: 'February (02)' },
-      { value: '03', label: 'March (03)' },
-      { value: '04', label: 'April (04)' },
-      { value: '05', label: 'May (05)' },
-      { value: '06', label: 'June (06)' },
-      { value: '07', label: 'July (07)' },
-      { value: '08', label: 'August (08)' },
-      { value: '09', label: 'September (09)' },
-      { value: '10', label: 'October (10)' },
-      { value: '11', label: 'November (11)' },
-      { value: '12', label: 'December (12)' },
+      { value: '01', label: 'January' },
+      { value: '02', label: 'February' },
+      { value: '03', label: 'March' },
+      { value: '04', label: 'April' },
+      { value: '05', label: 'May' },
+      { value: '06', label: 'June' },
+      { value: '07', label: 'July' },
+      { value: '08', label: 'August' },
+      { value: '09', label: 'September' },
+      { value: '10', label: 'October' },
+      { value: '11', label: 'November' },
+      { value: '12', label: 'December' },
     ],
     []
   );
@@ -220,7 +220,8 @@ export const TasksPage: React.FC<TasksPageProps> = ({
       const taskYear = task.month ? task.month.slice(0, 4) : task.due_date ? task.due_date.slice(0, 4) : '';
       const taskMonthNum = task.month && task.month.length >= 7 ? task.month.slice(5, 7) : task.due_date && task.due_date.length >= 7 ? task.due_date.slice(5, 7) : '';
 
-      const matchesYear = selectedYear === 'all' || taskYear === selectedYear;
+      const cleanYear = selectedYear.trim();
+      const matchesYear = !cleanYear || cleanYear === 'all' || taskYear.includes(cleanYear);
       const matchesMonth = selectedMonth === 'all' || taskMonthNum === selectedMonth;
 
       return matchesSearch && matchesAssignee && matchesStatus && matchesYear && matchesMonth;
@@ -609,23 +610,26 @@ export const TasksPage: React.FC<TasksPageProps> = ({
             </select>
           </div>
 
-          <div className="filter-select-group">
+          <div className="filter-select-group" style={{ minWidth: '100px', maxWidth: '120px' }}>
             <label className="filter-label" htmlFor="filter-year">
               Year
             </label>
-            <select
+            <input
               id="filter-year"
+              type="text"
               className="filter-select"
+              style={{ height: '36px', padding: '0.4rem 0.6rem' }}
+              placeholder="All Years"
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-            >
-              <option value="all">All Years</option>
+              maxLength={4}
+              list="year-suggestions"
+            />
+            <datalist id="year-suggestions">
               {availableYears.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
+                <option key={y} value={y} />
               ))}
-            </select>
+            </datalist>
           </div>
 
           <div className="filter-select-group">
@@ -650,7 +654,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({
           {(selectedClient !== 'all' ||
             selectedAssignee !== 'all' ||
             selectedStatus !== 'all' ||
-            selectedYear !== 'all' ||
+            selectedYear !== '' ||
             selectedMonth !== 'all' ||
             searchQuery ||
             Boolean(activeClientTypeFilter)) && (
@@ -662,7 +666,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({
                 setSelectedClient('all');
                 setSelectedAssignee('all');
                 setSelectedStatus('all');
-                setSelectedYear('all');
+                setSelectedYear('');
                 setSelectedMonth('all');
                 if (onClearClientTypeFilter) onClearClientTypeFilter();
               }}
