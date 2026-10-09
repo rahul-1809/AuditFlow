@@ -111,18 +111,22 @@ export const TeamPage: React.FC = () => {
     }
   };
 
-  // Delete Assistant Account
+  // Delete Assistant Account Permanently
   const handleDeleteUser = async (user: UserProfile) => {
     if (user.role === 'admin') {
       alert('Primary Admin account cannot be deleted.');
       return;
     }
 
-    if (window.confirm(`Delete assistant account for ${user.name} (${user.email})?`)) {
+    if (
+      window.confirm(
+        `Are you sure you want to PERMANENTLY delete the account for ${user.name} (${user.email})?\n\nThis action cannot be undone.`
+      )
+    ) {
       try {
         await api.deleteUser(user.id);
         await loadUsers();
-        showNotification(`Account deleted for ${user.name}.`);
+        showNotification(`Account for ${user.name} has been permanently removed.`);
       } catch (err: any) {
         alert(`Error deleting account: ${err.message}`);
       }
