@@ -610,7 +610,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({
             </select>
           </div>
 
-          <div className="filter-select-group" style={{ minWidth: '100px', maxWidth: '120px' }}>
+          <div className="filter-select-group">
             <label className="filter-label" htmlFor="filter-year">
               Year
             </label>
@@ -618,7 +618,6 @@ export const TasksPage: React.FC<TasksPageProps> = ({
               id="filter-year"
               type="text"
               className="filter-select"
-              style={{ height: '36px', padding: '0.4rem 0.6rem' }}
               placeholder="All Years"
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}

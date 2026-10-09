@@ -635,6 +635,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1 1 120px;
+  min-width: 110px;
 }
 
 .filter-label {
@@ -646,6 +648,7 @@ body {
 }
 
 .filter-select {
+  width: 100%;
   padding: 7px 10px;
   font-size: 12.5px;
   font-family: var(--font-family);
@@ -654,7 +657,6 @@ body {
   background-color: #ffffff;
   color: var(--text-primary);
   outline: none;
-  min-width: 150px;
   transition: all var(--transition-base);
   cursor: pointer;
 }
