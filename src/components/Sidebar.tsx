@@ -30,6 +30,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       <nav className="sidebar-nav">
+        <div className="nav-section-title">WORKSPACE</div>
+
         <button
           type="button"
           className={`nav-item ${currentTab === 'tasks' && activeClientTypeFilter === null ? 'active' : ''}`}
@@ -38,6 +40,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <CheckSquare size={17} className="nav-icon" />
           <span>Tasks</span>
         </button>
+
+        <div className="nav-section-title" style={{ marginTop: '14px' }}>COMPLIANCE SERVICES</div>
 
         <div className="nav-group">
           <button
@@ -60,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => onSelectClientType(type)}
                   title={`Filter tasks by ${type}`}
                 >
-                  <span className="nav-sub-bullet" />
+                  <span className={`nav-sub-bullet bullet-${type.toLowerCase().replace(/\s+/g, '-')}`} />
                   <span>{type}</span>
                 </button>
               );

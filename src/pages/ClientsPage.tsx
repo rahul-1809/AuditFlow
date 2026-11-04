@@ -48,6 +48,8 @@ export const ClientsPage: React.FC = () => {
   // Modals state
   const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [isDeletingClient, setIsDeletingClient] = useState(false);
   const [isAddCredModalOpen, setIsAddCredModalOpen] = useState(false);
   const [editingCred, setEditingCred] = useState<ClientCredential | null>(null);
 
@@ -364,6 +366,33 @@ export const ClientsPage: React.FC = () => {
     }
   };
 
+  // Delete Client
+  const handleDeleteClient = async () => {
+    if (!clientToDelete) return;
+    try {
+      setIsDeletingClient(true);
+      await api.deleteClient(clientToDelete.id);
+
+      const [updatedClients, updatedCreds] = await Promise.all([
+        api.getClients(),
+        api.getCredentials(),
+      ]);
+      setClients(updatedClients);
+      setCredentials(updatedCreds);
+
+      if (selectedClientId === clientToDelete.id) {
+        const remaining = updatedClients.filter((c) => c.id !== clientToDelete.id);
+        setSelectedClientId(remaining[0]?.id || '');
+      }
+
+      setClientToDelete(null);
+    } catch (err: any) {
+      alert(`Error deleting client: ${err.message}`);
+    } finally {
+      setIsDeletingClient(false);
+    }
+  };
+
   // Add Credential
   const handleOpenAddCred = () => {
     const clientTypes = selectedClient?.client_types || [];
@@ -560,14 +589,25 @@ export const ClientsPage: React.FC = () => {
                 </div>
 
                 {isAdmin && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-xs"
-                    onClick={() => handleOpenEditClient(selectedClient)}
-                  >
-                    <Edit2 size={12} className="mr-1" />
-                    Edit Client
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-xs"
+                      onClick={() => handleOpenEditClient(selectedClient)}
+                    >
+                      <Edit2 size={12} className="mr-1" />
+                      Edit Client
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger btn-xs"
+                      onClick={() => setClientToDelete(selectedClient)}
+                      title="Delete Client"
+                    >
+                      <Trash2 size={12} className="mr-1" />
+                      Delete Client
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -1216,19 +1256,87 @@ export const ClientsPage: React.FC = () => {
             />
           </div>
 
+          <div className="modal-actions-split">
+            <button
+              type="button"
+              className="btn btn-outline-danger btn-sm"
+              onClick={() => {
+                const target = editingClient;
+                setEditingClient(null);
+                setClientToDelete(target);
+              }}
+            >
+              <Trash2 size={13} className="mr-1" />
+              Delete Client
+            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setEditingClient(null)}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary btn-sm">
+                Update Client
+              </button>
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal: Confirm Delete Client (Admin) */}
+      <Modal
+        isOpen={Boolean(clientToDelete)}
+        onClose={() => {
+          if (!isDeletingClient) setClientToDelete(null);
+        }}
+        title="Delete Client"
+      >
+        <div className="compact-form">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-md mb-3 flex items-start gap-3">
+            <ShieldAlert size={20} className="text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-red-900 text-sm">
+                Permanently delete this client?
+              </p>
+              <p className="text-xs text-red-700 mt-1">
+                You are about to delete <strong>{clientToDelete?.name}</strong>.
+              </p>
+            </div>
+          </div>
+
+          <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded border border-slate-200 mb-4 space-y-2">
+            <p className="font-medium text-slate-700">The following associated data will also be permanently removed:</p>
+            <ul className="list-disc list-inside space-y-1 text-slate-600 pl-1">
+              <li>All portal login credentials linked to this client</li>
+              <li>All compliance tasks and audit items assigned for this client</li>
+            </ul>
+            <p className="text-red-600 font-semibold pt-1">
+              This action cannot be undone.
+            </p>
+          </div>
+
           <div className="modal-actions-bar">
             <button
               type="button"
               className="btn btn-secondary btn-sm"
-              onClick={() => setEditingClient(null)}
+              onClick={() => setClientToDelete(null)}
+              disabled={isDeletingClient}
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary btn-sm">
-              Update Client
+            <button
+              type="button"
+              className="btn btn-danger btn-sm"
+              onClick={handleDeleteClient}
+              disabled={isDeletingClient}
+            >
+              <Trash2 size={13} className="mr-1" />
+              {isDeletingClient ? 'Deleting Client...' : 'Delete Client'}
             </button>
           </div>
-        </form>
+        </div>
       </Modal>
 
       {/* Modal: Add Portal Credential (Admin) */}

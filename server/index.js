@@ -242,6 +242,8 @@ app.put('/api/clients/:id', (req, res) => {
 
 app.delete('/api/clients/:id', (req, res) => {
   const { id } = req.params;
+  db.prepare('DELETE FROM client_credentials WHERE client_id = ?').run(id);
+  db.prepare('DELETE FROM tasks WHERE client_id = ?').run(id);
   db.prepare('DELETE FROM clients WHERE id = ?').run(id);
   res.json({ success: true });
 });

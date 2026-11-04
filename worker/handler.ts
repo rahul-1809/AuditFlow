@@ -431,7 +431,17 @@ export async function handleApiRequest(
 
     if (clientMatch && method === 'DELETE') {
       const id = clientMatch[1];
-      await env.DB.prepare('DELETE FROM clients WHERE id = ?').bind(id).run();
+      if (typeof env.DB.batch === 'function') {
+        await env.DB.batch([
+          env.DB.prepare('DELETE FROM client_credentials WHERE client_id = ?').bind(id),
+          env.DB.prepare('DELETE FROM tasks WHERE client_id = ?').bind(id),
+          env.DB.prepare('DELETE FROM clients WHERE id = ?').bind(id),
+        ]);
+      } else {
+        await env.DB.prepare('DELETE FROM client_credentials WHERE client_id = ?').bind(id).run();
+        await env.DB.prepare('DELETE FROM tasks WHERE client_id = ?').bind(id).run();
+        await env.DB.prepare('DELETE FROM clients WHERE id = ?').bind(id).run();
+      }
       return jsonResponse({ success: true });
     }
 

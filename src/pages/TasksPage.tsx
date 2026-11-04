@@ -16,6 +16,12 @@ import {
   ChevronRight,
   ChevronDown,
   Archive,
+  Clock,
+  AlertCircle,
+  ListTodo,
+  FileCheck2,
+  Building,
+  CheckSquare,
 } from 'lucide-react';
 
 interface ClientTaskGroup {
@@ -44,13 +50,17 @@ export const TasksPage: React.FC<TasksPageProps> = ({
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filter states
+  // Filter states - default to current month and year
+  const now = new Date();
+  const currentYearStr = String(now.getFullYear());
+  const currentMonthStr = String(now.getMonth() + 1).padStart(2, '0');
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClient, setSelectedClient] = useState<string>('all');
   const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [selectedYear, setSelectedYear] = useState<string>('');
-  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [selectedYear, setSelectedYear] = useState<string>(currentYearStr);
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthStr);
 
   // Expand / collapse state for company/client groups
   const [expandedGroupIds, setExpandedGroupIds] = useState<Record<string, boolean>>({});
@@ -283,6 +293,27 @@ export const TasksPage: React.FC<TasksPageProps> = ({
   const totalVisibleTasks = useMemo(() => {
     return taskGroups.reduce((acc, g) => acc + g.tasks.length, 0);
   }, [taskGroups]);
+
+  // Executive KPI Metrics (synchronized with active category, month, and year)
+  const metrics = useMemo(() => {
+    const baseTasks = tasks.filter((t) => {
+      if (activeClientTypeFilter && t.category !== activeClientTypeFilter) return false;
+      const taskYear = t.month ? t.month.slice(0, 4) : t.due_date ? t.due_date.slice(0, 4) : '';
+      const taskMonthNum = t.month && t.month.length >= 7 ? t.month.slice(5, 7) : t.due_date && t.due_date.length >= 7 ? t.due_date.slice(5, 7) : '';
+      const cleanYear = selectedYear.trim();
+      const matchesYear = !cleanYear || cleanYear === 'all' || taskYear.includes(cleanYear);
+      const matchesMonth = selectedMonth === 'all' || taskMonthNum === selectedMonth;
+      return matchesYear && matchesMonth;
+    });
+
+    return {
+      total: baseTasks.length,
+      todo: baseTasks.filter((t) => t.status === 'todo').length,
+      inProgress: baseTasks.filter((t) => t.status === 'in_progress').length,
+      review: baseTasks.filter((t) => t.status === 'completed').length,
+      approved: baseTasks.filter((t) => t.status === 'approved').length,
+    };
+  }, [tasks, activeClientTypeFilter, selectedYear, selectedMonth]);
 
   // Open Add Modal
   const handleOpenAddModal = () => {
@@ -533,6 +564,94 @@ export const TasksPage: React.FC<TasksPageProps> = ({
         </div>
       )}
 
+      {/* Executive KPI Summary Cards Bar (Unified Interactive Metrics & Status Filters) */}
+      <div className="kpi-metrics-grid">
+        <div 
+          className={`kpi-card ${selectedStatus === 'all' ? 'active' : ''}`}
+          onClick={() => setSelectedStatus('all')}
+          title="Click to view all tasks"
+        >
+          <div className="kpi-icon-box kpi-icon-total">
+            <ListTodo size={17} />
+          </div>
+          <div className="kpi-body">
+            <span className="kpi-title">All Compliance</span>
+            <div className="kpi-value-row">
+              <span className="kpi-count">{metrics.total}</span>
+              <span className="kpi-tag kpi-tag-neutral">Portfolio</span>
+            </div>
+          </div>
+        </div>
+
+        <div 
+          className={`kpi-card ${selectedStatus === 'todo' ? 'active' : ''}`}
+          onClick={() => setSelectedStatus(selectedStatus === 'todo' ? 'all' : 'todo')}
+          title="Click to filter To Do tasks"
+        >
+          <div className="kpi-icon-box kpi-icon-todo">
+            <CheckSquare size={17} />
+          </div>
+          <div className="kpi-body">
+            <span className="kpi-title">To Do</span>
+            <div className="kpi-value-row">
+              <span className="kpi-count">{metrics.todo}</span>
+              <span className="kpi-tag kpi-tag-neutral">Pending</span>
+            </div>
+          </div>
+        </div>
+
+        <div 
+          className={`kpi-card ${selectedStatus === 'in_progress' ? 'active' : ''}`}
+          onClick={() => setSelectedStatus(selectedStatus === 'in_progress' ? 'all' : 'in_progress')}
+          title="Click to filter In Progress tasks"
+        >
+          <div className="kpi-icon-box kpi-icon-progress">
+            <Clock size={17} />
+          </div>
+          <div className="kpi-body">
+            <span className="kpi-title">In Progress</span>
+            <div className="kpi-value-row">
+              <span className="kpi-count">{metrics.inProgress}</span>
+              <span className="kpi-tag kpi-tag-warning">Active</span>
+            </div>
+          </div>
+        </div>
+
+        <div 
+          className={`kpi-card ${selectedStatus === 'completed' ? 'active' : ''}`}
+          onClick={() => setSelectedStatus(selectedStatus === 'completed' ? 'all' : 'completed')}
+          title="Click to filter Awaiting Signoff tasks"
+        >
+          <div className="kpi-icon-box kpi-icon-review">
+            <AlertCircle size={17} />
+          </div>
+          <div className="kpi-body">
+            <span className="kpi-title">Awaiting Signoff</span>
+            <div className="kpi-value-row">
+              <span className="kpi-count">{metrics.review}</span>
+              <span className="kpi-tag kpi-tag-info">Review</span>
+            </div>
+          </div>
+        </div>
+
+        <div 
+          className={`kpi-card ${selectedStatus === 'approved' ? 'active' : ''}`}
+          onClick={() => setSelectedStatus(selectedStatus === 'approved' ? 'all' : 'approved')}
+          title="Click to filter Approved & Filed tasks"
+        >
+          <div className="kpi-icon-box kpi-icon-approved">
+            <FileCheck2 size={17} />
+          </div>
+          <div className="kpi-body">
+            <span className="kpi-title">Approved & Filed</span>
+            <div className="kpi-value-row">
+              <span className="kpi-count">{metrics.approved}</span>
+              <span className="kpi-tag kpi-tag-success">Verified</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Filter Toolbar (Due Date & Target Month filters removed per Section 8) */}
       <div className="filter-toolbar">
         <div className="search-input-wrapper">
@@ -614,21 +733,19 @@ export const TasksPage: React.FC<TasksPageProps> = ({
             <label className="filter-label" htmlFor="filter-year">
               Year
             </label>
-            <input
+            <select
               id="filter-year"
-              type="text"
               className="filter-select"
-              placeholder="All Years"
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              maxLength={4}
-              list="year-suggestions"
-            />
-            <datalist id="year-suggestions">
+            >
+              <option value="all">All Years</option>
               {availableYears.map((y) => (
-                <option key={y} value={y} />
+                <option key={y} value={y}>
+                  {y}
+                </option>
               ))}
-            </datalist>
+            </select>
           </div>
 
           <div className="filter-select-group">
@@ -653,8 +770,8 @@ export const TasksPage: React.FC<TasksPageProps> = ({
           {(selectedClient !== 'all' ||
             selectedAssignee !== 'all' ||
             selectedStatus !== 'all' ||
-            selectedYear !== '' ||
-            selectedMonth !== 'all' ||
+            selectedYear !== currentYearStr ||
+            selectedMonth !== currentMonthStr ||
             searchQuery ||
             Boolean(activeClientTypeFilter)) && (
             <button
@@ -665,8 +782,8 @@ export const TasksPage: React.FC<TasksPageProps> = ({
                 setSelectedClient('all');
                 setSelectedAssignee('all');
                 setSelectedStatus('all');
-                setSelectedYear('');
-                setSelectedMonth('all');
+                setSelectedYear(currentYearStr);
+                setSelectedMonth(currentMonthStr);
                 if (onClearClientTypeFilter) onClearClientTypeFilter();
               }}
             >
@@ -737,11 +854,14 @@ export const TasksPage: React.FC<TasksPageProps> = ({
                             <div className="client-group-title-group">
                               <span className="client-group-chevron">
                                 {isExpanded ? (
-                                  <ChevronDown size={14} className="text-slate-700" />
+                                  <ChevronDown size={14} className="text-slate-600" />
                                 ) : (
-                                  <ChevronRight size={14} className="text-slate-700" />
+                                  <ChevronRight size={14} className="text-slate-600" />
                                 )}
                               </span>
+                              <div className={`client-avatar-badge ${group.isPendingTasks ? 'avatar-pending' : ''}`}>
+                                <Building size={13} />
+                              </div>
                               <span className="client-group-name font-semibold text-slate-800">
                                 {group.name}
                               </span>
@@ -839,12 +959,26 @@ export const TasksPage: React.FC<TasksPageProps> = ({
 
                               {/* Assigned To */}
                               <td>
-                                <div className="assignee-cell-name">
-                                  {assignee ? assignee.name : 'Unassigned'}
+                                <div className="assignee-cell-wrapper">
+                                  <div className="assignee-avatar-mini">
+                                    {assignee
+                                      ? assignee.name
+                                          .split(' ')
+                                          .map((n) => n[0])
+                                          .join('')
+                                          .slice(0, 2)
+                                          .toUpperCase()
+                                      : '?'}
+                                  </div>
+                                  <div>
+                                    <div className="assignee-cell-name">
+                                      {assignee ? assignee.name : 'Unassigned'}
+                                    </div>
+                                    {isAssignedToCurrent && (
+                                      <span className="self-tag">(You)</span>
+                                    )}
+                                  </div>
                                 </div>
-                                {isAssignedToCurrent && (
-                                  <span className="self-tag">(You)</span>
-                                )}
                               </td>
 
                               {/* Status */}
