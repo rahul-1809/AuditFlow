@@ -25,5 +25,12 @@
   },
   "vars": {
     "APP_ENV": "production"
-  }
+  },
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "ajassociate.online",
+      "custom_domain": true
+    }
+  ]
 }
